@@ -32,6 +32,13 @@ void shell_loop() {
         printf("> ");
 
         char* line = read_line();
+
+        // If an error occurred in read_line()
+        if (line == NULL) {
+            break;
+        }
+        printf("You typed: %s\n", line);
+
         char** args = parse_line(line);
         int status = execute(args);
 
@@ -49,6 +56,43 @@ void shell_loop() {
  * @return A string from the terminal
  */
 char* read_line() {
+    int const BUFF_ADD = 1024;
+
+
+    int buffsize = BUFF_ADD;
+    int position = 0;
+    char* buffer = (char*) malloc(sizeof(char) * buffsize);
+
+    if (buffer == NULL) {
+        fprintf(stderr, "my_sh: allocation error\n");
+        return NULL;
+    }
+
+    // Will end when EOF or \n is read, or if an error occurs
+    while (true) {
+        char c = (char) getchar();
+
+        // End of line
+        if (c == EOF || c == '\n') {
+            buffer[position] == '\0';
+            return buffer;
+        } else {
+            buffer[position] = c;
+        }
+        position++;
+
+
+        // If we exceed the buffer size, we need to reallocate to make space
+        if (position >= buffsize) {
+            buffsize += BUFF_ADD;
+            buffer = (char*) realloc(buffer, buffsize);
+
+            if (buffer == NULL) {
+                fprintf(stderr, "my_sh: allocation error\n");
+                return NULL;
+            }
+        }
+    }
     return NULL;
 }
 
@@ -71,7 +115,7 @@ char** parse_line(char* line) {
  * the user wants to leave the shell.
  */
 bool execute(char** args) {
-    return false;
+    return true;
 }
 
 /**
