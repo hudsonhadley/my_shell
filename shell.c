@@ -27,7 +27,7 @@ void shell_loop() {
             break;
         }
 
-        int idx = 0;
+        size_t idx = 0;
         printf("[ ");
         while (args[idx] != NULL) {
             printf("'%s' ", args[idx]);
@@ -114,7 +114,7 @@ char** parse_line(char* line) {
     size_t curr = 0;
     size_t idx = 0;
 
-    while (line[idx] == ' ') {
+    while (line[idx] != '\0' && line[idx] == ' ') {
         idx++;
     }
 
@@ -173,7 +173,9 @@ char** parse_line(char* line) {
 bool execute(char** args) {
     if (args == NULL) {
         return false;
-    } else if (strcmp(args[0], "exit") == 0) {
+    } else if (args[0] == NULL) { // Entered nothing, keep going
+        return true;
+    }else if (strcmp(args[0], "exit") == 0) {
         return false;
     }
 
