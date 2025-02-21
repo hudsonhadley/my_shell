@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "shell.h"
 
@@ -170,6 +171,12 @@ char** parse_line(char* line) {
  * the user wants to leave the shell.
  */
 bool execute(char** args) {
+    if (args == NULL) {
+        return false;
+    } else if (strcmp(args[0], "exit") == 0) {
+        return false;
+    }
+
     return true;
 }
 
