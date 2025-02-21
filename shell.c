@@ -19,9 +19,21 @@ void shell_loop() {
         if (line == NULL) {
             break;
         }
-        printf("You typed: %s\n", line);
 
         char** args = parse_line(line);
+
+        if (args == NULL) {
+            break;
+        }
+
+        int idx = 0;
+        printf("[ ");
+        while (args[idx] != NULL) {
+            printf("'%s' ", args[idx]);
+            idx++;
+        }
+        printf("]\n");
+
         int status = execute(args);
 
         free(line);
@@ -38,7 +50,7 @@ void shell_loop() {
  * @return A string from the terminal
  */
 char* read_line() {
-    int const BUFF_ADD = 1024;
+    int const BUFF_ADD = 50;
 
 
     int buffsize = BUFF_ADD;
@@ -46,7 +58,7 @@ char* read_line() {
     char* buffer = (char*) calloc(sizeof(char), buffsize);
 
     if (buffer == NULL) {
-        fprintf(stderr, "my_sh: allocation error\n");
+        fprintf(stderr, "my_shell: allocation error\n");
         return NULL;
     }
 
@@ -67,10 +79,18 @@ char* read_line() {
         // If we exceed the buffer size, we need to reallocate to make space
         if (position >= buffsize) {
             buffsize += BUFF_ADD;
-            buffer = (char*) realloc(buffer, buffsize);
+            char* new_buffer = (char*) calloc(sizeof(char), buffsize);
+
+            // Copy old elements over
+            for (int i = 0; i < buffsize - BUFF_ADD; i++) {
+                new_buffer[i] = buffer[i];
+            }
+
+            free(buffer);
+            buffer = new_buffer;
 
             if (buffer == NULL) {
-                fprintf(stderr, "my_sh: allocation error\n");
+                fprintf(stderr, "my_shell: allocation error\n");
                 return NULL;
             }
         }
@@ -80,12 +100,65 @@ char* read_line() {
 
 /**
  * @brief Parses a line from the command line. We will assume the first word is an executable.
- * Following this will be arguments for that command.
+ * Following this will be arguments for that command. This also assumes that the input is terminated
+ * with a '\0'.
  * @param line The string to parse
  * @return A parsed array of strings terminated by a NULL pointer
  */
 char** parse_line(char* line) {
-    return NULL;
+    size_t SIZE_ADD = 5; // We'll add in increments of 5 if we need to grow
+    
+    size_t SIZE = SIZE_ADD;
+    char** args = (char**) malloc(sizeof(char*) * SIZE);
+    size_t curr = 0;
+    size_t idx = 0;
+
+    while (line[idx] == ' ') {
+        idx++;
+    }
+
+    while (line[idx] != '\0') {
+        // Find the end of the current word
+        size_t end = idx;
+        while (line[end] != ' ' && line[end] != '\0') {
+            end++;
+        }
+
+        size_t len = end - idx;
+        char* str = (char*) calloc(sizeof(char), len + 1);
+
+        // Copy it over
+        for (size_t i = 0; i < len; i++) {
+            str[i] = line[idx + i];
+        }
+        str[len] = '\0';
+
+        idx = end;
+        while (line[idx] == ' ') {
+            idx++;
+        }
+
+        // Regrow if need be
+        if (curr >= SIZE - 1) {
+            SIZE += SIZE_ADD;
+            
+            char** new_args = (char**) malloc(sizeof(char*) * SIZE);
+
+            for (int i = 0; i < SIZE - SIZE_ADD; i++) {
+                new_args[i] = args[i];
+            }
+            free(args);
+            args = new_args;
+        }
+
+
+        args[curr] = str;
+        curr++;
+    }
+
+    args[curr] = NULL;
+
+    return args;
 }
 
 /**
