@@ -1,3 +1,10 @@
+/**
+ * @file main.c
+ * @author Hudson Hadley
+ * @date 2025-02-22
+ * @brief Main function of a simple shell
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

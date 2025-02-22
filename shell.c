@@ -1,3 +1,10 @@
+/**
+ * @file shell.c
+ * @author Hudson Hadley
+ * @date 2025-02-22
+ * @brief Library of functions used on the shell for looping and execution
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,6 +19,8 @@
  * HELPER FUNCTIONS
  ***********************************************************************************************/
 bool launch(char** args);
+bool is_whitespace(char c);
+int find_match(char* s, int idx);
 
 /**
  * @brief Executes the shell loop until the user exits. Each loop has three steps: read, parse, and
@@ -31,8 +40,10 @@ void shell_loop() {
 
         char** args = parse_line(line);
 
+        // Error in parsing (probably unclosed quotation)
         if (args == NULL) {
-            break;
+            fprintf(stderr, "mysh: error parsing (probably unclosed quotation mark)\n");
+            continue;
         }
 
         int status = execute(args);
@@ -114,23 +125,50 @@ char** parse_line(char* line) {
     size_t curr = 0;
     size_t idx = 0;
 
-    while (line[idx] != '\0' && line[idx] == ' ') {
+    // Find the first non whitespace character
+    while (line[idx] != '\0' && is_whitespace(line[idx])) {
         idx++;
     }
 
     while (line[idx] != '\0') {
+
         // Find the end of the current word
         size_t end = idx;
-        while (line[end] != ' ' && line[end] != '\0') {
-            end++;
+        int quote_count = 0; // These will be omitted
+
+        while (!is_whitespace(line[end]) && line[end] != '\0') {
+
+            // If we have a quote, find the end of it
+            if (line[end] == '\'' || line[idx] == '\"') {
+                int match_idx = find_match(line, end);
+
+                if (match_idx < 0) {
+                    return NULL;
+                }
+
+                quote_count += 2;
+                end += match_idx;
+
+            } else {
+
+                end++;
+            }
         }
 
         size_t len = end - idx;
+        len -= quote_count;
+
         char* str = (char*) calloc(sizeof(char), len + 1);
 
         // Copy it over
+        int line_idx = idx;
         for (size_t i = 0; i < len; i++) {
-            str[i] = line[idx + i];
+            // Skip quotes
+            while (line[line_idx] == '\'' || line[line_idx] == '\"') {
+                line_idx++;
+            }
+            str[i] = line[line_idx];
+            line_idx++;
         }
         str[len] = '\0';
 
@@ -163,6 +201,35 @@ char** parse_line(char* line) {
 }
 
 /**
+ * @brief Finds a matching character after the current idx
+ * @param s The string
+ * @param idx the index of the character to match
+ * @return the index of the matching character, or -1 if no character found
+ */
+int find_match(char* s, int idx) {
+    int match_idx = idx + 1;
+
+    while (s[match_idx] != '\0') {
+        if (s[match_idx] == s[idx]) {
+            return match_idx;
+        }
+
+        match_idx++;
+    }
+
+    return -1; // If none found
+}
+
+/**
+ * @brief Tells whether or not a character is a whitespace character
+ * @param c the character to check
+ * @return true if the character is whitespace
+ */
+bool is_whitespace(char c) {
+    return c == ' ' || c == '\t' || c == '\n';
+}
+
+/**
  * @brief Executes a parsed command. This assumes that the first element in the array is a command,
  * and is followed by a list of arguments. It also assumes that this array is terminated by the NULL
  * pointer.
@@ -188,6 +255,11 @@ bool execute(char** args) {
     return launch(args);
 }
 
+/**
+ * @brief Launches a parsed command assuming that it is a NULL terminated array of strings.
+ * @param args The list of arguments
+ * @return true if no errors occurred
+ */
 bool launch(char** args) {
     if (args == NULL) { // Ideally this should never occur, but just a safeguard
         return false;
