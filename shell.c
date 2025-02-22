@@ -2,8 +2,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include "shell.h"
+
+/************************************************************************************************
+ * HELPER FUNCTIONS
+ ***********************************************************************************************/
+bool launch(char** args);
 
 /**
  * @brief Executes the shell loop until the user exits. Each loop has three steps: read, parse, and
@@ -26,14 +33,6 @@ void shell_loop() {
         if (args == NULL) {
             break;
         }
-
-        size_t idx = 0;
-        printf("[ ");
-        while (args[idx] != NULL) {
-            printf("'%s' ", args[idx]);
-            idx++;
-        }
-        printf("]\n");
 
         int status = execute(args);
 
@@ -59,7 +58,7 @@ char* read_line() {
     char* buffer = (char*) calloc(sizeof(char), buffsize);
 
     if (buffer == NULL) {
-        fprintf(stderr, "my_shell: allocation error\n");
+        fprintf(stderr, "mysh: allocation error\n");
         return NULL;
     }
 
@@ -91,7 +90,7 @@ char* read_line() {
             buffer = new_buffer;
 
             if (buffer == NULL) {
-                fprintf(stderr, "my_shell: allocation error\n");
+                fprintf(stderr, "mysh: allocation error\n");
                 return NULL;
             }
         }
@@ -173,10 +172,48 @@ char** parse_line(char* line) {
 bool execute(char** args) {
     if (args == NULL) {
         return false;
-    } else if (args[0] == NULL) { // Entered nothing, keep going
+    } else if (args[0] == NULL) {
         return true;
-    }else if (strcmp(args[0], "exit") == 0) {
+    } else if (strcmp(args[0], "exit") == 0) {
         return false;
+    }
+
+    return launch(args);
+}
+
+bool launch(char** args) {
+    if (args == NULL) { // Ideally this should never occur, but just a safeguard
+        return false;
+    }
+
+    pid_t pid = fork(); // Splits the process
+
+    // Child process --> run the new command
+    if (pid == 0) {
+        int return_value = execvp(args[0], args); // If nothing goes wrong, nothing should be returned
+        
+        // Only returns
+        if (return_value == -1) {
+            perror("mysh");
+        }
+        exit(EXIT_FAILURE); // Only will reach if execvp has error and returns
+
+    // Error forking the process
+    } else if (pid == -1) {
+        perror("mysh");
+
+    // Parent process -> wait for the child to end
+    } else {
+        int status;
+
+        while (true) {
+            pid_t w_pid = waitpid(pid, &status, WUNTRACED); // Return if child has stopped
+
+            // If we exit normally or if we exitted with a signal, break
+            if (WIFEXITED(status) || WIFSIGNALED(status)) {
+                break;
+            }
+        }
     }
 
     return true;
