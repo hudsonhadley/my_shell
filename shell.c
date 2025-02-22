@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 
 #include "shell.h"
+#include "builtin.h"
 
 /************************************************************************************************
  * HELPER FUNCTIONS
@@ -174,8 +175,14 @@ bool execute(char** args) {
         return false;
     } else if (args[0] == NULL) {
         return true;
-    } else if (strcmp(args[0], "exit") == 0) {
-        return false;
+    }
+
+    int idx = 0;
+    while (built_in_str[idx] != NULL) {
+        if (strcmp(args[0], built_in_str[idx]) == 0) {
+            return (built_in_func[idx]) (args);
+        }
+        idx++;
     }
 
     return launch(args);
