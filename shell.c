@@ -20,7 +20,7 @@
  ***********************************************************************************************/
 bool launch(char** args);
 bool is_whitespace(char c);
-int find_match(char* s, int idx);
+size_t find_match(char* s, size_t idx);
 
 /**
  * @brief Executes the shell loop until the user exits. Each loop has three steps: read, parse, and
@@ -125,7 +125,8 @@ char** parse_line(char* line) {
     size_t curr = 0;
     size_t idx = 0;
 
-    // Find the first non whitespace character
+
+    // Find the first non whitespace character in the first word
     while (line[idx] != '\0' && is_whitespace(line[idx])) {
         idx++;
     }
@@ -137,17 +138,17 @@ char** parse_line(char* line) {
         int quote_count = 0; // These will be omitted
 
         while (!is_whitespace(line[end]) && line[end] != '\0') {
-
             // If we have a quote, find the end of it
-            if (line[end] == '\'' || line[idx] == '\"') {
-                int match_idx = find_match(line, end);
+            if (line[end] == '\'' || line[end] == '\"') {
+                size_t match_idx = find_match(line, end);
 
                 if (match_idx < 0) {
                     return NULL;
                 }
 
+                
                 quote_count += 2;
-                end += match_idx;
+                end = match_idx + 1;
 
             } else {
 
@@ -170,10 +171,13 @@ char** parse_line(char* line) {
             str[i] = line[line_idx];
             line_idx++;
         }
+
         str[len] = '\0';
 
-        idx = end;
-        while (line[idx] == ' ') {
+        idx = end; // Move to the end of the word
+
+        // Find the first non whitespace character in the next word
+        while (line[idx] != '\0' && is_whitespace(line[idx])) {
             idx++;
         }
 
@@ -206,8 +210,8 @@ char** parse_line(char* line) {
  * @param idx the index of the character to match
  * @return the index of the matching character, or -1 if no character found
  */
-int find_match(char* s, int idx) {
-    int match_idx = idx + 1;
+size_t find_match(char* s, size_t idx) {
+    size_t match_idx = idx + 1;
 
     while (s[match_idx] != '\0') {
         if (s[match_idx] == s[idx]) {
