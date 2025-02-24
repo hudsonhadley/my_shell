@@ -20,7 +20,7 @@
  ***********************************************************************************************/
 bool launch(char** args);
 bool is_whitespace(char c);
-size_t find_match(char* s, size_t idx);
+long find_match(char* s, size_t idx);
 
 /**
  * @brief Executes the shell loop until the user exits. Each loop has three steps: read, parse, and
@@ -29,6 +29,7 @@ size_t find_match(char* s, size_t idx);
 void shell_loop() {
 
     while (true) {
+
         printf("> ");
 
         char* line = read_line();
@@ -140,7 +141,7 @@ char** parse_line(char* line) {
         while (!is_whitespace(line[end]) && line[end] != '\0') {
             // If we have a quote, find the end of it
             if (line[end] == '\'' || line[end] == '\"') {
-                size_t match_idx = find_match(line, end);
+                long match_idx = find_match(line, end);
 
                 if (match_idx < 0) {
                     return NULL;
@@ -210,8 +211,8 @@ char** parse_line(char* line) {
  * @param idx the index of the character to match
  * @return the index of the matching character, or -1 if no character found
  */
-size_t find_match(char* s, size_t idx) {
-    size_t match_idx = idx + 1;
+long find_match(char* s, size_t idx) {
+    long match_idx = idx + 1;
 
     while (s[match_idx] != '\0') {
         if (s[match_idx] == s[idx]) {
