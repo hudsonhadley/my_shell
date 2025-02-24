@@ -21,6 +21,7 @@
 bool launch(char** args);
 bool is_whitespace(char c);
 long find_match(char* s, size_t idx);
+void print_array(char** arr);
 
 /**
  * @brief Executes the shell loop until the user exits. Each loop has three steps: read, parse, and
@@ -46,6 +47,9 @@ void shell_loop() {
             fprintf(stderr, "mysh: error parsing (probably unclosed quotation mark)\n");
             continue;
         }
+
+        // print_array(args); // For debugging
+
 
         int status = execute(args);
 
@@ -163,12 +167,15 @@ char** parse_line(char* line) {
         char* str = (char*) calloc(sizeof(char), len + 1);
 
         // Copy it over
+        
+        // Move by one if it is the start of the quote
         int line_idx = idx;
+        if (line[line_idx] == '\"' || line[line_idx] == '\'') {
+            line_idx++;
+        }
+
         for (size_t i = 0; i < len; i++) {
-            // Skip quotes
-            while (line[line_idx] == '\'' || line[line_idx] == '\"') {
-                line_idx++;
-            }
+
             str[i] = line[line_idx];
             line_idx++;
         }
@@ -324,4 +331,20 @@ void deep_free(char** arr) {
     }
 
     free(arr);
+}
+
+
+/**
+ * @brief Prints an array of strings
+ * @param arr the array to print
+ */
+void print_array(char** arr) {
+    printf("[ ");
+
+    int idx = 0;
+    while (arr[idx] != NULL) {
+        printf("'%s' ", arr[idx]);
+        idx++;
+    }
+    printf("]\n");
 }
